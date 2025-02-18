@@ -131,9 +131,33 @@ The authors employed a hybrid evaluation approach combining:
 2. For large papers, estimate costs using:  
    ```python
    from tiktoken import get_encoding
-   encoder = get_encoding("cl100k_base")
-   tokens = encoder.encode(text)
-   print(f"Estimated cost: ${len(tokens)*0.00013/1000:.4f}")
+
+   def estimate_cost_from_documents(docs, cost_per_1k=0.0001):
+    """
+    Given a list of Document objects (each with a 'page_content' attribute),
+    combine their text, count tokens using cl100k_base, and return the token count and cost.
+    """
+    # Use the tokenizer (for GPT-3.5, GPT-4, text-embedding-ada-002)
+    encoder = get_encoding("cl100k_base")
+    
+    # Combine text from all documents into a single string
+    combined_text = " ".join(doc.page_content for doc in docs)
+    
+    # Encode the text to count tokens
+    tokens = encoder.encode(combined_text)
+    num_tokens = len(tokens)
+    
+    # Calculate estimated cost (cost per 1K tokens)
+    estimated_cost = (num_tokens / 1000) * cost_per_1k
+    return num_tokens, estimated_cost
+
+   # Example usage:
+   # Assume 'load_scientific_paper' is your function that returns the list of documents
+   documents = load_scientific_paper(config.DOCUMENT_PATH)
+   num_tokens, cost = estimate_cost_from_documents(documents, cost_per_1k=0.0001)
+   print(f"Number of tokens: {num_tokens}")
+   print(f"Estimated cost: ${cost:.4f}")
+   
    ```
 
 ### Model Customization  
